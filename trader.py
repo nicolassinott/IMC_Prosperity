@@ -53,18 +53,23 @@ class Trader:
         return state.position.get(product, 0)    
 
     def get_mid_price(self, product, state):
+
+        default_price = self.ema_prices[product]
+        if default_price is None:
+            default_price = DEFAULT_PRICES[product]
+
         if product not in state.order_depths:
-            return DEFAULT_PRICES[product]
+            return default_price
 
         market_bids = state.order_depths[product].buy_orders
         if len(market_bids) == 0:
             # There are no bid orders in the market (midprice undefined)
-            return DEFAULT_PRICES[product]
+            return default_price
         
         market_asks = state.order_depths[product].sell_orders
         if len(market_asks) == 0:
             # There are no bid orders in the market (mid_price undefined)
-            return DEFAULT_PRICES[product]
+            return default_price
         
         best_bid = max(market_bids)
         best_ask = min(market_asks)
