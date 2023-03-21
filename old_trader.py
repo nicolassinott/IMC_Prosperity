@@ -13,12 +13,16 @@ PRODUCTS = [
     BANANAS,
 ]
 
-PEARL_PRICE = 10_000
-
+DEFAULT_PRICES = {
+    PEARLS : 10_000,
+    BANANAS : 5_000,
+}
 
 class Trader:
 
     def __init__(self) -> None:
+        
+        print("Initializing Trader...")
 
         self.position_limit = {
             PEARLS : 20,
@@ -50,17 +54,17 @@ class Trader:
 
     def get_mid_price(self, product, state : TradingState):
         if product not in state.order_depths:
-            return None
+            return DEFAULT_PRICES[product]
 
         market_bids = state.order_depths[product].buy_orders
         if len(market_bids) == 0:
             # There are no bid orders in the market (midprice undefined)
-            return None
+            return DEFAULT_PRICES[product]
         
         market_asks = state.order_depths[product].sell_orders
         if len(market_asks) == 0:
             # There are no bid orders in the market (mid_price undefined)
-            return None
+            return DEFAULT_PRICES[product]
         
         best_bid = max(market_bids)
         best_ask = min(market_asks)
@@ -130,8 +134,8 @@ class Trader:
         ask_volume = - self.position_limit[PEARLS] - position_pearls
 
         orders = []
-        orders.append(Order(PEARLS, PEARL_PRICE - 1, bid_volume))
-        orders.append(Order(PEARLS, PEARL_PRICE + 1, ask_volume))
+        orders.append(Order(PEARLS, DEFAULT_PRICES[PEARLS] - 1, bid_volume))
+        orders.append(Order(PEARLS, DEFAULT_PRICES[PEARLS] + 1, ask_volume))
 
         return orders
 
