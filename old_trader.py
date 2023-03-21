@@ -45,10 +45,10 @@ class Trader:
 
 
     # utils
-    def get_position(self, product, state):
+    def get_position(self, product, state : TradingState):
         return state.position.get(product, 0)    
 
-    def get_mid_price(self, product, state):
+    def get_mid_price(self, product, state : TradingState):
         if product not in state.order_depths:
             return None
 
@@ -66,13 +66,13 @@ class Trader:
         best_ask = min(market_asks)
         return (best_bid + best_ask)/2
 
-    def get_value_on_product(self, product, state):
+    def get_value_on_product(self, product, state : TradingState):
         """
         Returns the amount of MONEY currently held on the product.  
         """
         return self.get_position(product, state) * self.get_mid_price(product, state)
             
-    def update_pnl(self, state):
+    def update_pnl(self, state : TradingState):
         """
         Updates the pnl.
         """
@@ -99,7 +99,7 @@ class Trader:
         update_cash()
         return self.cash + get_value_on_positions()
 
-    def update_ema_prices(self, state):
+    def update_ema_prices(self, state : TradingState):
         """
         Update the exponential moving average of the prices of each product.
         """
@@ -116,7 +116,7 @@ class Trader:
 
 
     # Algorithm logic
-    def pearls_strategy(self, state):
+    def pearls_strategy(self, state : TradingState):
         """
         Returns a list of orders with trades of pearls.
 
@@ -135,7 +135,7 @@ class Trader:
 
         return orders
 
-    def bananas_strategy(self, state):
+    def bananas_strategy(self, state : TradingState):
         """
         Returns a list of orders with trades of bananas.
 
@@ -212,3 +212,21 @@ class Trader:
         print("+---------------------------------+")
 
         return result
+    
+
+    # if len(order_depth.buy_orders) > 0:
+                #     best_bid = max(order_depth.buy_orders.keys()) + 1
+                #     best_bid = PEARL_PRICE - 1
+                #     if best_bid < PEARL_PRICE:
+                #         bid_volume = self.pearl_position_limit - position_pearls
+                #         print(f"Inserting bid order {Order(product, best_bid, bid_volume)}")
+                #         orders.append(Order(product, best_bid, bid_volume))
+                #         self.last_orders['PEARLS']['BID'].add(best_bid)
+                # if len(order_depth.sell_orders) > 0:
+                #     best_ask = min(order_depth.sell_orders.keys()) - 1
+                #     best_ask = PEARL_PRICE + 1
+                #     if best_ask > PEARL_PRICE:
+                #         ask_volume = -self.pearl_position_limit - position_pearls
+                #         print(f"Inserting ask order {Order(product, best_ask, ask_volume)}")
+                #         orders.append(Order(product, best_ask, ask_volume))
+                #         self.last_orders['PEARLS']['ASK'].add(best_ask)
