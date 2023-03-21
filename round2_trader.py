@@ -27,7 +27,7 @@ DEFAULT_PRICES = {
 }
 
 POSITION_LIMITS = {
-    COCONUTS: 300,
+    COCONUTS: 600,
     PINA_COLADAS: 300
 }
 
@@ -44,7 +44,7 @@ class Trader:
 
     def __init__(self) -> None:
         
-        print("Initializing Trader...")
+        print("Initializing Trader... ok")
 
         self.position_limit = {
             PEARLS : 20,
@@ -256,8 +256,8 @@ class Trader:
         coconuts_position = self.coconuts_pair_position
         pina_coladas_position = self.get_position(PINA_COLADAS, state)
 
-        if pina_coladas_position != -coconuts_position:
-            print(f"WRONG: pina_colada: {pina_coladas_position}, coconuts: {coconuts_position}")
+        #if pina_coladas_position != -coconuts_position:
+        #    print(f"WRONG: pina_colada: {pina_coladas_position}, coconuts: {coconuts_position}")
 
         avg_spread = self.prices["Spread"].rolling(WINDOW).mean()
         std_spread = self.prices["Spread"].rolling(WINDOW).std()
@@ -271,24 +271,24 @@ class Trader:
 
             if abs(coconuts_position) < POSITION_LIMITS[COCONUTS]-30:
                 if spread_5 < avg_spread - 1.5*std_spread: # buy 
-                    orders_coconuts.append(Order(COCONUTS, int_price_coconuts-2, -ORDER_VOLUME))
+                    orders_coconuts.append(Order(COCONUTS, int_price_coconuts-2, -2*ORDER_VOLUME))
                     orders_pina_coladas.append(Order(PINA_COLADAS, int_price_pina_coladas+3, ORDER_VOLUME))
                     self.coconuts_pair_position -= ORDER_VOLUME
                      
                 elif spread_5 > avg_spread + 1.5*std_spread: # sell
-                    orders_coconuts.append(Order(COCONUTS, int_price_coconuts+3, ORDER_VOLUME))
+                    orders_coconuts.append(Order(COCONUTS, int_price_coconuts+3, 2*ORDER_VOLUME))
                     orders_pina_coladas.append(Order(PINA_COLADAS, int_price_pina_coladas-2, -ORDER_VOLUME))
                     self.coconuts_pair_position += ORDER_VOLUME
 
             else: # abs(coconuts_position) >= POSITION_LIMITS[COCONUTS] - 30
                 if coconuts_position > 0:
                     if spread_5 < avg_spread - 1.5*std_spread:
-                        orders_coconuts.append(Order(COCONUTS, int_price_coconuts-2, -ORDER_VOLUME))
+                        orders_coconuts.append(Order(COCONUTS, int_price_coconuts-2, -2*ORDER_VOLUME))
                         orders_pina_coladas.append(Order(PINA_COLADAS, int_price_pina_coladas+3, ORDER_VOLUME))
                         self.coconuts_pair_position -= ORDER_VOLUME
                 else :
                     if spread_5 > avg_spread + 1.5*std_spread:
-                        orders_coconuts.append(Order(COCONUTS, int_price_coconuts+3, ORDER_VOLUME))
+                        orders_coconuts.append(Order(COCONUTS, int_price_coconuts+3, 2*ORDER_VOLUME))
                         orders_pina_coladas.append(Order(PINA_COLADAS, int_price_pina_coladas-2, -ORDER_VOLUME))
                         self.coconuts_pair_position += ORDER_VOLUME
 
