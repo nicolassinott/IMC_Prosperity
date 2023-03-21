@@ -159,20 +159,34 @@ class Trader:
 
         orders = []
 
-        if position_bananas == 0:
-            # Not long nor short
-            orders.append(Order(BANANAS, math.floor(self.ema_prices[BANANAS] - 1), bid_volume))
-            orders.append(Order(BANANAS, math.ceil(self.ema_prices[BANANAS] + 1), ask_volume))
+        # if position_bananas == 0:
+        #     # Not long nor short
+        #     orders.append(Order(BANANAS, math.floor(self.ema_prices[BANANAS] - 1), bid_volume))
+        #     orders.append(Order(BANANAS, math.ceil(self.ema_prices[BANANAS] + 1), ask_volume))
         
-        if position_bananas > 0:
-            # Long position
-            orders.append(Order(BANANAS, math.floor(self.ema_prices[BANANAS] - 2), bid_volume))
-            orders.append(Order(BANANAS, math.ceil(self.ema_prices[BANANAS]), ask_volume))
+        if state.order_depths[BANANAS] and state.order_depths[BANANAS].buy_orders:
+            bid_price = max(state.order_depths[BANANAS].buy_orders.keys()) + 1
+        else:
+            bid_price = None
+        if state.order_depths[BANANAS] and state.order_depths[BANANAS].sell_orders:
+            ask_price = min(state.order_depths[BANANAS].sell_orders.keys()) - 1
+        else:
+            ask_price = None
 
-        if position_bananas < 0:
-            # Short position
-            orders.append(Order(BANANAS, math.floor(self.ema_prices[BANANAS]), bid_volume))
-            orders.append(Order(BANANAS, math.ceil(self.ema_prices[BANANAS] + 2), ask_volume))
+        if bid_price:
+            orders.append(Order(BANANAS, bid_price, bid_volume))
+        if ask_price:
+            orders.append(Order(BANANAS, ask_price, ask_volume))
+
+        # if position_bananas > 0:
+        #     # Long position
+        #     orders.append(Order(BANANAS, math.floor(self.ema_prices[BANANAS] - 2), bid_volume))
+        #     orders.append(Order(BANANAS, math.ceil(self.ema_prices[BANANAS]), ask_volume))
+
+        # if position_bananas < 0:
+        #     # Short position
+        #     orders.append(Order(BANANAS, math.floor(self.ema_prices[BANANAS]), bid_volume))
+        #     orders.append(Order(BANANAS, math.ceil(self.ema_prices[BANANAS] + 2), ask_volume))
 
         return orders
 
@@ -205,11 +219,11 @@ class Trader:
         result = {}
 
         # PEARL STRATEGY
-        try:
-            result[PEARLS] = self.pearls_strategy(state)
-        except Exception as e:
-            print("Error in pearls strategy")
-            print(e)
+        # try:
+        #     result[PEARLS] = self.pearls_strategy(state)
+        # except Exception as e:
+        #     print("Error in pearls strategy")
+        #     print(e)
 
         # BANANA STRATEGY
         try:
