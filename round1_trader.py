@@ -221,21 +221,3 @@ class Trader:
         print("+---------------------------------+")
 
         return result
-    
-
-    # if len(order_depth.buy_orders) > 0:
-                #     best_bid = max(order_depth.buy_orders.keys()) + 1
-                #     best_bid = PEARL_PRICE - 1
-                #     if best_bid < PEARL_PRICE:
-                #         bid_volume = self.pearl_position_limit - position_pearls
-                #         print(f"Inserting bid order {Order(product, best_bid, bid_volume)}")
-                #         orders.append(Order(product, best_bid, bid_volume))
-                #         self.last_orders['PEARLS']['BID'].add(best_bid)
-                # if len(order_depth.sell_orders) > 0:
-                #     best_ask = min(order_depth.sell_orders.keys()) - 1
-                #     best_ask = PEARL_PRICE + 1
-                #     if best_ask > PEARL_PRICE:
-                #         ask_volume = -self.pearl_position_limit - position_pearls
-                #         print(f"Inserting ask order {Order(product, best_ask, ask_volume)}")
-                #         orders.append(Order(product, best_ask, ask_volume))
-                #         self.last_orders['PEARLS']['ASK'].add(best_ask)
