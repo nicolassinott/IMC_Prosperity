@@ -35,6 +35,7 @@ ORDER_VOLUME = 10
 
 TAKE_PROFIT = 10
 STOP_LOSS = 30
+WINDOW = 200
 
 MEAN_SPREAD = DEFAULT_PRICES[PINA_COLADAS] - DEFAULT_PRICES[COCONUTS]
 MEAN_SPREAD_STD = 30
@@ -70,7 +71,8 @@ class Trader:
 
         self.prices : Dict[PRODUCTS, pd.Series] = {
             PINA_COLADAS: pd.Series(),
-            COCONUTS: pd.Series()
+            COCONUTS: pd.Series(),
+            "Spread":pd.Series()
         }
 
         self.all_positions = set()
@@ -246,8 +248,8 @@ class Trader:
         if pina_coladas_position != -coconuts_position:
             print(f"WRONG: pina_colada: {pina_coladas_position}, coconuts: {coconuts_position}")
 
-        avg_spread = self.prices["Spread"].rolling(100).mean()
-        std_spread = self.prices["Spread"].rolling(100).std()
+        avg_spread = self.prices["Spread"].rolling(WINDOW).mean()
+        std_spread = self.prices["Spread"].rolling(WINDOW).std()
         spread_5 = self.prices["Spread"].rolling(5).mean()
 
         if not np.isnan(avg_spread.iloc[-1]):
