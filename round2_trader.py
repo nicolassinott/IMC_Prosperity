@@ -31,7 +31,7 @@ POSITION_LIMITS = {
     PINA_COLADAS: 300
 }
 
-ORDER_VOLUME = 10
+ORDER_VOLUME = 5
 
 TAKE_PROFIT = 10
 STOP_LOSS = 30
@@ -49,6 +49,7 @@ class Trader:
         self.position_limit = {
             PEARLS : 20,
             BANANAS : 20,
+            "COCONUTS_EMA": 300
         }
 
         self.round = 0
@@ -76,7 +77,7 @@ class Trader:
         }
 
         self.all_positions = set()
-    
+        self.coconuts_pair_position = 0
 
     # utils
     def get_position(self, product, state : TradingState):
@@ -167,7 +168,14 @@ class Trader:
             pd.Series({state.timestamp: price_pina_colada})
         ])
 
-        self.prices["Spread"] = self.prices[PINA_COLADAS] - self.prices[COCONUTS]
+        # # linreg to get b value
+        # X = self.prices[COCONUTS].copy().to_frame()
+        # X["const"] = 1
+        # y = self.prices[PINA_COLADAS].copy()
+        # # B = (XtX)^-1 Xt y
+        # B = np.linalg.multi_dot([np.linalg.inv(np.dot(X.transpose(),X)), X.transpose(), y])
+
+        self.prices["Spread"] = self.prices[PINA_COLADAS] - 1.551*self.prices[COCONUTS]
 
     # Algorithm logic
     def pearls_strategy(self, state : TradingState):
@@ -221,7 +229,7 @@ class Trader:
 
         return orders
     
-    def coconuts_pina_coladas_strategy(self, state : TradingState) -> List[Dict]:
+    def coconuts_pina_coladas_strategy(self, state : TradingState) -> List[List[Order]]:
         """Performs statistical arbitrage between coconuts and pina coladas.
         Verifies if the (rolling5 - rolling50)/std50 of the spread is bigger 
         than 2 (or smaller than -2).
@@ -232,17 +240,17 @@ class Trader:
         Returns:
             _type_: _description_
         """        
-        orders_coconuts = []
-        orders_pina_coladas = []
+        orders_coconuts : List = []
+        orders_pina_coladas : List = []
 
-        self.save_prices(state)
+        self.save_prices(state) 
 
         mid_price_coconuts = self.get_mid_price(COCONUTS, state)
         mid_price_pina_coladas = self.get_mid_price(PINA_COLADAS, state)
         spread = mid_price_pina_coladas - mid_price_coconuts
-        # spread_5 
 
-        coconuts_position = self.get_position(COCONUTS, state)
+        # coconuts_position = self.get_position(COCONUTS, state)
+        coconuts_position = self.coconuts_pair_position
         pina_coladas_position = self.get_position(PINA_COLADAS, state)
 
         if pina_coladas_position != -coconuts_position:
@@ -259,85 +267,55 @@ class Trader:
             print(f"Average spread: {avg_spread}, Spread5: {spread_5}, Std: {std_spread}")
 
             if abs(coconuts_position) < POSITION_LIMITS[COCONUTS]-30:
-                if spread_5 < avg_spread - 1.5*std_spread:
+                if spread_5 < avg_spread - 1.5*std_spread: # buy 
                     orders_coconuts.append(Order(COCONUTS, 1, -ORDER_VOLUME))
                     orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, ORDER_VOLUME))
-                    
-                elif spread_5 > avg_spread + 1.5*std_spread:
+                    self.coconuts_pair_position -= ORDER_VOLUME
+                     
+                elif spread_5 > avg_spread + 1.5*std_spread: # sell
                     orders_coconuts.append(Order(COCONUTS, 1e5, ORDER_VOLUME))
                     orders_pina_coladas.append(Order(PINA_COLADAS, 1, -ORDER_VOLUME))
+                    self.coconuts_pair_position += ORDER_VOLUME
 
             else: # abs(coconuts_position) >= POSITION_LIMITS[COCONUTS] - 30
                 if coconuts_position > 0:
                     if spread_5 < avg_spread - 1.5*std_spread:
                         orders_coconuts.append(Order(COCONUTS, 1, -ORDER_VOLUME))
                         orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, ORDER_VOLUME))
+                        self.coconuts_pair_position -= ORDER_VOLUME
                 else :
                     if spread_5 > avg_spread + 1.5*std_spread:
                         orders_coconuts.append(Order(COCONUTS, 1e5, ORDER_VOLUME))
                         orders_pina_coladas.append(Order(PINA_COLADAS, 1, -ORDER_VOLUME))
-
-            # # take profit 
-            # removed_positions = []
-            # for position in self.all_positions:
-            #     if position > 0 and position - spread > TAKE_PROFIT:
-            #         orders_coconuts.append(Order(COCONUTS, 1, -ORDER_VOLUME))
-            #         orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, ORDER_VOLUME))
-            #         removed_positions.append(position)
-
-            #         print(f"Take profit: {position}, {spread}")
-
-            #     elif position < 0 and spread - abs(position) < -TAKE_PROFIT:
-            #         orders_coconuts.append(Order(COCONUTS, 1e5, ORDER_VOLUME))
-            #         orders_pina_coladas.append(Order(PINA_COLADAS, 1, -ORDER_VOLUME))
-            #         removed_positions.append(position)
-
-            #         print(f"Take profit: {position}, {spread}")
-
-            # for el in removed_positions:
-            #     self.all_positions.remove(el)
-
-        # if coconuts_position < 0:
-        #     if spread > avg_spread:
-        #         orders_coconuts.append(Order(COCONUTS, 1e5, -coconuts_position))
-        #         orders_pina_coladas.append(Order(PINA_COLADAS, 1, coconuts_position))
-
-        # else: # coconuts_position > 0
-        #     if spread < avg_spread:
-        #         orders_coconuts.append(Order(COCONUTS, 1, -coconuts_position))
-        #         orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, coconuts_position))
-        
-
-        # if coconuts_position == 0:
-        #     if spread < MEAN_SPREAD - MEAN_SPREAD_STD:
-        #         orders_coconuts.append(Order(COCONUTS, 1, -60))
-        #         orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, 60))
-        #         self.last_position = spread
-        #     elif spread > MEAN_SPREAD + MEAN_SPREAD_STD:
-        #         orders_coconuts.append(Order(COCONUTS, 1e5, 60))
-        #         orders_pina_coladas.append(Order(PINA_COLADAS, 1, -60))
-        #         self.last_position = spread
-        
-        # elif coconuts_position < 0:
-        #     if spread > MEAN_SPREAD:
-        #         orders_coconuts.append(Order(COCONUTS, 1e5, -coconuts_position))
-        #         orders_pina_coladas.append(Order(PINA_COLADAS, 1, coconuts_position))
-        #     # elif abs(spread - self.last_position) > STOP_LOSS:
-        #     #     orders_coconuts.append(Order(COCONUTS, 1e5, -coconuts_position))
-        #     #     orders_pina_coladas.append(Order(PINA_COLADAS, 1, coconuts_position))
-        #     #     print(f"Stopped: Bought as {self.last_position}, closed as {spread}")
-
-        # else: # coconuts_position > 0
-        #     if spread < MEAN_SPREAD:
-        #         orders_coconuts.append(Order(COCONUTS, 1, -coconuts_position))
-        #         orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, coconuts_position))
-        #     # elif abs(spread - self.last_position) > STOP_LOSS:
-        #     #     orders_coconuts.append(Order(COCONUTS, 1, -coconuts_position))
-        #     #     orders_pina_coladas.append(Order(PINA_COLADAS, 1e5, coconuts_position))
-        #     #     print(f"Stopped: Sold as {self.last_position}, closed as {spread}")
+                        self.coconuts_pair_position += ORDER_VOLUME
 
         return orders_coconuts, orders_pina_coladas
+    
+    def coconut_strategy(self, state: TradingState):
+        position_coconuts = self.get_position(COCONUTS, state) - self.coconuts_pair_position
 
+        bid_volume = min(40, self.position_limit["COCONUTS_EMA"] - position_coconuts)
+        ask_volume = max(-40, -self.position_limit["COCONUTS_EMA"] - position_coconuts)
+
+        orders = []
+
+        if position_coconuts == 0:
+            # Not long nor short
+            orders.append(Order(COCONUTS, math.floor(self.ema_prices[COCONUTS] - 1), bid_volume))
+            orders.append(Order(COCONUTS, math.ceil(self.ema_prices[COCONUTS] + 1), ask_volume))
+            
+        
+        if position_coconuts > 0:
+            # Long position
+            orders.append(Order(COCONUTS, math.floor(self.ema_prices[COCONUTS] - 2), bid_volume))
+            orders.append(Order(COCONUTS, math.ceil(self.ema_prices[COCONUTS]), ask_volume))
+
+        if position_coconuts < 0:
+            # Short position
+            orders.append(Order(COCONUTS, math.floor(self.ema_prices[COCONUTS]), bid_volume))
+            orders.append(Order(COCONUTS, math.ceil(self.ema_prices[COCONUTS] + 2), ask_volume))
+
+        return orders
 
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
@@ -367,27 +345,32 @@ class Trader:
         # Initialize the method output dict as an empty dict
         result = {}
 
-        # # PEARL STRATEGY
-        # try:
-        #     result[PEARLS] = self.pearls_strategy(state)
-        # except Exception as e:
-        #     print("Error in pearls strategy")
-        #     print(e)
+        # PEARL STRATEGY
+        try:
+            result[PEARLS] = self.pearls_strategy(state)
+        except Exception as e:
+            print("Error in pearls strategy")
+            print(e)
 
-        # # BANANA STRATEGY
-        # try:
-        #     result[BANANAS] = self.bananas_strategy(state)
-        # except Exception as e:
-        #     print("Error in bananas strategy")
-        #     print(e)
+        # BANANA STRATEGY
+        try:
+            result[BANANAS] = self.bananas_strategy(state)
+        except Exception as e:
+            print("Error in bananas strategy")
+            print(e)
 
         # COCONUTS AND PINA COLADAS STRATEGY
         try:
             result[COCONUTS], result[PINA_COLADAS] = self.coconuts_pina_coladas_strategy(state)
+            # coconut_ema = self.coconut_strategy(state)
+            # result[COCONUTS].extend(coconut_ema)
+            
         except Exception as e:
             print("Error in coconuts and pina coladas strategy")
             print(e)
 
+        print(result)
+        
         print("+---------------------------------+")
 
         return result
