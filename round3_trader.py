@@ -12,7 +12,7 @@ COCONUTS = "COCONUTS"
 PINA_COLADAS = "PINA_COLADAS"
 BERRIES = "BERRIES"
 DIVING_GEAR = "DIVING_GEAR"
-DOLPHIN_SIGHTINS = "DOLPHIN_SIGHTINS"
+DOLPHIN_SIGHTINGS = "DOLPHIN_SIGHTINGS"
 
 
 PRODUCTS = [
@@ -22,7 +22,7 @@ PRODUCTS = [
     PINA_COLADAS,
     BERRIES,
     DIVING_GEAR,
-    DOLPHIN_SIGHTINS 
+    # DOLPHIN_SIGHTINGS 
 ]
 
 DEFAULT_PRICES = {
@@ -32,14 +32,17 @@ DEFAULT_PRICES = {
     PINA_COLADAS : 15_000,
     BERRIES : 3_900,
     DIVING_GEAR : 99_000,
-    DOLPHIN_SIGHTINS : 3_050
+    DOLPHIN_SIGHTINGS : 3_050
 }
 
 POSITION_LIMITS = {
     COCONUTS: 600,
     PINA_COLADAS: 300,
-    BERRIES: 250
+    BERRIES: 250,
+    DIVING_GEAR: 50,
 }
+
+PCT_CHANGE_SIGNAL = 0.002
 
 ORDER_VOLUME = 5
 
@@ -83,11 +86,19 @@ class Trader:
         self.prices : Dict[PRODUCTS, pd.Series] = {
             PINA_COLADAS: pd.Series(),
             COCONUTS: pd.Series(),
-            "Spread":pd.Series()
+            "Spread":pd.Series(),
+            DIVING_GEAR:pd.Series(),
         }
 
         self.all_positions = set()
+
         self.coconuts_pair_position = 0
+        self.last_dolphin_price = -1
+        self.dolphin_signal = 0 # 0 if closed, 1 long, -1 short
+        self.trend = 0
+
+        self.min_time_hold_position = 20 * 100
+        self.initial_time_hold_position = 0
 
     # utils
     def get_position(self, product, state : TradingState):
@@ -178,14 +189,17 @@ class Trader:
             pd.Series({state.timestamp: price_pina_colada})
         ])
 
-        # # linreg to get b value
-        # X = self.prices[COCONUTS].copy().to_frame()
-        # X["const"] = 1
-        # y = self.prices[PINA_COLADAS].copy()
-        # # B = (XtX)^-1 Xt y
-        # B = np.linalg.multi_dot([np.linalg.inv(np.dot(X.transpose(),X)), X.transpose(), y])
-
         self.prices["Spread"] = self.prices[PINA_COLADAS] - 1.551*self.prices[COCONUTS]
+
+    def save_prices_diving_gear(self, state: TradingState):
+        price_diving_gear = self.get_mid_price(DIVING_GEAR, state)
+        self.prices[DIVING_GEAR] = pd.concat([
+            self.prices[DIVING_GEAR],
+            pd.Series({state.timestamp: price_diving_gear})
+        ])
+
+    def get_dolphins_observations(self, state: TradingState):
+        return state.observations[DOLPHIN_SIGHTINGS]
 
     # Algorithm logic
     def pearls_strategy(self, state : TradingState):
@@ -360,6 +374,123 @@ class Trader:
                     Order(BERRIES, 1, volume)
                 )
         return order_berries
+    
+    def diving_gear_strategy(self, state: TradingState) -> List[Order]:
+        """Diving gear strategy
+
+        Args:
+            state (TradingState): _description_
+
+        Returns:
+            List[Order]: 
+        """        
+        def reset_trend():
+            self.dolphin_signal = 0
+            self.trend = 0
+
+        self.save_prices_diving_gear(state)
+        position_diving_gear = self.get_position(DIVING_GEAR, state)
+
+        if self.last_dolphin_price == -1:
+            self.last_dolphin_price = self.get_dolphins_observations(state)
+            return []
+        
+        orders_diving_gear = []
+        
+        dolphin_price = self.get_dolphins_observations(state)
+        pct_change_dolphin = (dolphin_price - self.last_dolphin_price) / self.last_dolphin_price
+
+        print(f"Dolphing pct change: {pct_change_dolphin}")
+        print(f"Current signal: {self.dolphin_signal}")
+        print(f"Trend is: {self.trend}")
+        print(f"Current delta time: {state.timestamp - self.initial_time_hold_position}")
+
+        diving_gear_price = self.get_mid_price(DIVING_GEAR, state)
+
+        if (pct_change_dolphin > PCT_CHANGE_SIGNAL or self.dolphin_signal == 1) and self.dolphin_signal != -1 and abs(self.trend) != 3:
+            if self.dolphin_signal == 0:
+                self.initial_time_hold_position = state.timestamp
+            
+            self.dolphin_signal = 1
+            if position_diving_gear < POSITION_LIMITS[DIVING_GEAR]:
+                volume = min(POSITION_LIMITS[DIVING_GEAR] - position_diving_gear, 10)
+                orders_diving_gear.append(
+                    Order(DIVING_GEAR, diving_gear_price + 200, volume)
+                )
+
+        if (pct_change_dolphin < - PCT_CHANGE_SIGNAL or self.dolphin_signal == -1) and self.dolphin_signal != 1 and abs(self.trend) != 3:
+            if self.dolphin_signal == 0:
+                self.initial_time_hold_position = state.timestamp
+            
+            self.dolphin_signal = -1
+            if position_diving_gear > - POSITION_LIMITS[DIVING_GEAR]:
+                volume = max(- POSITION_LIMITS[DIVING_GEAR] - position_diving_gear, -10)
+                orders_diving_gear.append(
+                    Order(DIVING_GEAR, diving_gear_price - 200, volume)
+                )
+
+        self.last_dolphin_price = dolphin_price
+
+        ## Checking closing trend
+        if self.dolphin_signal != 0 and state.timestamp - self.initial_time_hold_position > self.min_time_hold_position:
+
+            ## Updating trend
+            if abs(self.trend) != 3:
+                closing_position_signal = self.prices[DIVING_GEAR]\
+                    .iloc[-203:]\
+                    .pct_change(1)\
+                    .rolling(200)\
+                    .mean()\
+                    .iloc[-1]
+                
+                if np.isnan(closing_position_signal):
+                    return orders_diving_gear  
+            
+                if self.dolphin_signal == 1 and self.trend > -3:
+                    if closing_position_signal < 0:
+                        self.trend -= 1
+                    else:
+                        self.trend = 0
+                elif self.dolphin_signal == -1 and self.trend < 3:
+                    if closing_position_signal > 0:
+                        self.trend += 1
+                    else:
+                        self.trend = 0
+
+            ## Cancelling order
+            if self.dolphin_signal == -1 and self.trend == 3:
+                if position_diving_gear == 0:
+                    reset_trend()
+                else:
+                    volume_hit = min(POSITION_LIMITS[DIVING_GEAR] - position_diving_gear, 10)
+                    # volume_market_maker = POSITION_LIMITS[DIVING_GEAR] - position_diving_gear - volume_hit
+                    
+                    orders_diving_gear.append(
+                        Order(DIVING_GEAR, diving_gear_price + 200, volume_hit)
+                    )
+
+                    # if volume_market_maker > 0:
+                    #     orders_diving_gear.append(
+                    #         Order(DIVING_GEAR, diving_gear_price, volume_market_maker)
+                    #     )
+
+            elif self.dolphin_signal == 1 and self.trend == -3:
+                if position_diving_gear == 0:
+                    reset_trend()
+                else:
+                    volume_hit = max(-POSITION_LIMITS[DIVING_GEAR] - position_diving_gear, -10)
+                    # volume_market_maker = - POSITION_LIMITS[DIVING_GEAR] - position_diving_gear - volume_hit
+
+                    orders_diving_gear.append(
+                        Order(DIVING_GEAR, diving_gear_price - 200, volume_hit)
+                    )
+
+                    # if volume_market_maker < 0:
+                    #     orders_diving_gear.append(
+                    #         Order(DIVING_GEAR, diving_gear_price, volume_market_maker)
+                    #     )
+                    
+        return orders_diving_gear
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -382,8 +513,9 @@ class Trader:
         print(f"\tCash {self.cash}")
         for product in PRODUCTS:
             print(f"\tProduct {product}, Position {self.get_position(product, state)}, Midprice {self.get_mid_price(product, state)}, Value {self.get_value_on_product(product, state)}, EMA {self.ema_prices[product]}")
-        print(f"\tPnL {pnl}")
+        print(f"\tDolphing observations: {self.get_dolphins_observations(state)}")
         
+        print(f"\tPnL {pnl}")
 
         # Initialize the method output dict as an empty dict
         result = {}
@@ -411,6 +543,7 @@ class Trader:
             print("Error in coconuts and pina coladas strategy")
             print(e)
 
+        # BERRIES STRATEGY
         try:
             result[BERRIES] = self.berries_strategy(state)
 
@@ -418,6 +551,13 @@ class Trader:
             print("Error in Berries strategy")
             print(e)
 
+        # DIVING GEAR STRATEGY
+        try:
+            result[DIVING_GEAR] = self.diving_gear_strategy(state)
+
+        except Exception as e:
+            print("Error in Diving gears strategy")
+            print(e)
         
         print("+---------------------------------+")
 
