@@ -4,6 +4,10 @@ import pandas as pd
 import numpy as np
 import math
 
+# Traders
+OLIVIA = 'Olivia'
+PETER = 'Peter'
+
 # storing string as const to avoid typos
 SUBMISSION = "SUBMISSION"
 PEARLS = "PEARLS"
@@ -117,6 +121,10 @@ class Trader:
 
         self.min_time_hold_position = 20 * 100
         self.initial_time_hold_position = 0
+
+        # Olivia
+        self.olivia_buy_trend = False
+        self.memory_olivia = False
 
     # utils
     def get_position(self, product, state : TradingState):
@@ -384,19 +392,34 @@ class Trader:
         order_berries = []
         position_berries = self.get_position(BERRIES, state)
 
-        if abs(state.timestamp - 2e5) <= 800:
+        ## Olivia
+
+        if not self.memory_olivia:
+            if BERRIES in state.market_trades:
+                # print(f"Found berries, traders: {state.market_trades[BERRIES]}")
+                for index, trade in enumerate(state.market_trades[BERRIES]):
+                    if trade.buyer == OLIVIA:
+                        # print('Found Olivia!')
+                        self.olivia_buy_trend = True
+                        self.memory_olivia = True
+
+        ## End Olivia
+
+        if abs(state.timestamp - 5e5) <= 800:
+            self.olivia_buy_trend = False
+            if position_berries + POSITION_LIMITS[BERRIES] > 0:
+                volume = max(-POSITION_LIMITS[BERRIES] - position_berries, -40)
+                order_berries.append(
+                    Order(BERRIES, 1, volume)
+                )
+
+        if abs(state.timestamp - 2e5) <= 800 or self.olivia_buy_trend:
             if POSITION_LIMITS[BERRIES] - position_berries > 0:
                 volume = min(POSITION_LIMITS[BERRIES]- position_berries, 40)
                 order_berries.append(
                     Order(BERRIES, 1e4, volume)
                 )
             
-        if abs(state.timestamp - 5e5) <= 800:
-            if position_berries + POSITION_LIMITS[BERRIES] > 0:
-                volume = max(-POSITION_LIMITS[BERRIES] - position_berries, -40)
-                order_berries.append(
-                    Order(BERRIES, 1, volume)
-                )
         return order_berries
     
     def diving_gear_strategy(self, state: TradingState) -> List[Order]:
