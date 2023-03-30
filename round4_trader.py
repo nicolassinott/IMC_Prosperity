@@ -550,9 +550,9 @@ class Trader:
         price_baguette = self.get_mid_price(BAGUETTE, state)
 
         position_basket = self.get_position(PICNIC_BASKET, state)
-        position_dip = self.get_position(DIP, state)
-        position_ukulele = self.get_position(UKULELE, state)
-        position_baguette = self.get_position(BAGUETTE, state)
+        # position_dip = self.get_position(DIP, state)
+        # position_ukulele = self.get_position(UKULELE, state)
+        # position_baguette = self.get_position(BAGUETTE, state)
 
         spread = price_basket - (price_ukulele + 2* price_baguette + 4*price_dip)
         self.save_prices_product(
