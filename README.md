@@ -8,7 +8,7 @@ The purpose of this competition is to utilize various techniques of data analysi
 
 The competition comprises five rounds, each involving the introduction of new commodities exhibiting distinct behaviors.
 
-### Round 1
+* Round 1
 
     Participants have worked with two assets, namely **PEARLS**, whose price remains relatively constant over time at a value of 10k seashells, and **BANANAS**, an asset whose price is highly volatile, fluctuating frequently.
 
@@ -44,7 +44,7 @@ Where $t$ is the current time, $\alpha$ is an hyperparameter and $P_{t}$ is the 
 
 ### Round 2
 
-In this round, we created a pair trading strategy between COCONUT and PINA_COLADAS. Then we traded on the spread:
+In this round, since COCONUT and PINA_COLADAS prices are have correlation over 90%, we created a pair trading strategy between COCONUT and PINA_COLADAS. Then we traded on the spread:
 
 $$
     Spread = P_{t, \ PINA \ COLADAS} - P_{t, \ COCONUTS}
@@ -54,8 +54,23 @@ $$
 
 * When the z-score of the spread is lower than -1.5, we bought the spread (*i.e.*, we buy PINA_COLADAS and sell coconuts)
 
+
+<p align="center">
+  <img src="img/pina_coladas-coconut.jpg" />
+</p>
+
 ### Round 3
 
 For BERRIES, we verified that the price starts rising at $ t_{long} = 2e5 $ and after $ t_{short} = 5e5 $, it starts falling. Then, we buy at $ t_{long} $ and sell at $ t_{short} $
 
-For DIVING_GEARs we verified that big jumps in the derivative of DOLPHIN_SIGHTINS implied in future jumps in DIVING_GEARs prices.
+<p align="center">
+  <img src="img/berries.jpg" />
+</p>
+
+
+For DIVING_GEARs we verified that big jumps in the derivative of DOLPHIN_SIGHTINS implies in big jumps in DIVING_GEAR price (see the figure below). Therefore, when the derivative of dolphin sightings reaches a buying threshold (set at 0.002) or a selling threshold (set at -0.002), our algorithm trades in the appropriate direction.
+
+<p align="center">
+  <img src="img/dolphin-diving_gear.jpg" />
+</p>
+
