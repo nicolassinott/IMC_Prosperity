@@ -68,7 +68,7 @@ For BERRIES, we verified that the price starts rising at $ t_{long} = 2e5 $ and 
 </p>
 
 
-For DIVING_GEARs we traded based on a signal from the DOLPHIN_SIGHTINS observations. The signal was based on a sufficiently elevated derivative of these observations, both for buying and selling (see figure below). Therefore, when the derivative of dolphin sightings reaches a buying threshold (set at 0.002) or a selling threshold (set at -0.002), our algorithm trades in the appropriate direction.
+For DIVING_GEARs we traded based on a signal from the DOLPHIN_SIGHTINGS observations. The signal was based on a sufficiently elevated derivative of these observations, both for buying and selling (see figure below). Therefore, when the derivative of dolphin sightings reaches a buying threshold (set at 0.002) or a selling threshold (set at -0.002), our algorithm trades in the appropriate direction.
 
 <p align="center">
   <img src="img/dolphin-diving_gear.jpg" />
