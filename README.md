@@ -1,6 +1,10 @@
 # IMC_Prosperity
 
-Repository containing the code from [IMC Prosperity](https://prosperity.imc.com/)'s challenge. 
+Repository containing the code from [IMC Prosperity](https://prosperity.imc.com/)'s challenge. Our team got the 91st place out of more than 8000 teams.
+
+<p align="center">
+  <img src="img/island.jpeg" />
+</p>
 
 ## :scroll: Rules
 
