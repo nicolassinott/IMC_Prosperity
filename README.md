@@ -74,3 +74,18 @@ For DIVING_GEARs we verified that big jumps in the derivative of DOLPHIN_SIGHTIN
   <img src="img/dolphin-diving_gear.jpg" />
 </p>
 
+### Round 4
+
+In this round, we traded on the SPREAD between PICNIC_BASKET and its components, when the z-scores passes $ \pm $ 1.5
+
+$$
+  Spread = P_{t, \ PICNIC BASKET} - (P_{t, \ UKULELE} + 4 \times P_{t, \ DIP} + 2 \times P_{t, \ BAGUETTE} ) 
+$$
+
+<p align="center">
+  <img src="img/picnic.jpg" />
+</p>
+
+### Round 5
+
+In the last round, we verified that our strategy performed consistently better than all IMC bots in all commodities. Then we decided to keep the same strategy as before.
