@@ -26,7 +26,7 @@ Participants have worked with four assets, namely **PICNIC_BASKET**, **UKULELE**
 
 ### Round 5
 
-During this round, participants were granted access to IMC trader bots and were given the opportunity to replicate, or take profit from the strategy of the most experienced bots.
+During this round, participants were granted access to IMC trader bots trading history and were given the opportunity to replicate, or take profit from the strategy of the most experienced bots.
 
 ## :computer: Our strategies
 
@@ -52,7 +52,7 @@ $$
 
 * When the z-score of the spread is higher than 1.5, we shorted the spread (*i.e* we buy COCONUTS and sell PINA_COLADAS)
 
-* When the z-score of the spread is lower than -1.5, we bought the spread (*i.e.*, we buy PINA_COLADAS and sell coconuts)
+* When the z-score of the spread is lower than -1.5, we bought the spread (*i.e.*, we buy PINA_COLADAS and sell COCONUTS)
 
 
 <p align="center">
@@ -68,7 +68,7 @@ For BERRIES, we verified that the price starts rising at $ t_{long} = 2e5 $ and 
 </p>
 
 
-For DIVING_GEARs we verified that big jumps in the derivative of DOLPHIN_SIGHTINS implies in big jumps in DIVING_GEAR price (see the figure below). Therefore, when the derivative of dolphin sightings reaches a buying threshold (set at 0.002) or a selling threshold (set at -0.002), our algorithm trades in the appropriate direction.
+For DIVING_GEARs we traded based on a signal from the DOLPHIN_SIGHTINGS observations. The signal was based on a sufficiently elevated derivative of these observations, both for buying and selling (see figure below). Therefore, when the derivative of dolphin sightings reaches a buying threshold (set at 0.002) or a selling threshold (set at -0.002), our algorithm trades in the appropriate direction.
 
 <p align="center">
   <img src="img/dolphin-diving_gear.jpg" />
