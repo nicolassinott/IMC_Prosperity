@@ -1,4 +1,4 @@
-# IMC_Prosperity
+# IMC Prosperity
 
 Repository containing the code from [IMC Prosperity](https://prosperity.imc.com/)'s challenge. Our team got the 91st place out of more than 8000 teams.
 
